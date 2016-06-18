@@ -1,2 +1,3 @@
-qmake
-make
+###build 
+* qmake
+* make
