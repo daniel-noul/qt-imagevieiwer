@@ -19,15 +19,24 @@ signals:
 public slots:
     void openImage();
     void test();
+    void showDefaultView();
+    void showFullView();
 
 private:
     QImage* m_pOriginImage;
     QLabel* m_pImageLabel;
     QPushButton m_ButtonOpenImage;
     QPushButton m_ButtonTest;
+    QPushButton m_ButtonDefaultView;
+    QPushButton m_ButtonFullView;
+    bool m_bDefaultView;
 
     bool loadImageFile(const QString& fileName);
     void setImage(const QImage& newImage);
+
+    void setDefaultView();
+    void setFullView();
+    void updateButtonPosition();
 };
 
 #endif // IMAGEVIEWER_H
