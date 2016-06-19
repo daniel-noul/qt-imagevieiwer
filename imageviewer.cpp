@@ -4,22 +4,25 @@
 const unsigned int DISPLAY_IMAGE_WIDTH = 640;
 const unsigned int DISPLAY_IMAGE_HEIGHT = 480;
 
+const unsigned int DISPLAY_FULL_IMAGE_WIDTH = 1920;
+const unsigned int DISPLAY_FULL_IMAGE_HEIGHT = 1080;
+
 ImageViewer::ImageViewer(QWidget *parent)
     : QWidget(parent),
       m_pOriginImage(NULL),
       m_pImageLabel(new QLabel(this)),
       m_ButtonOpenImage("OpenImage", this),
-      m_ButtonTest("Test", this)
+      m_ButtonTest("Test", this),
+      m_ButtonDefaultView("DefaultView", this),
+      m_ButtonFullView("FullView", this)
 {
-    setFixedSize(800, 600);
-    m_pImageLabel->setGeometry(10, 10, DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT);
+    setDefaultView();
     m_pImageLabel->setBackgroundRole(QPalette::Base);
 
-    m_ButtonOpenImage.setGeometry(660, 10, 120, 30);
     QObject::connect(&m_ButtonOpenImage, SIGNAL(clicked()), this, SLOT(openImage()));
-
-    m_ButtonTest.setGeometry(660, 50, 120, 30);
     QObject::connect(&m_ButtonTest, SIGNAL(clicked()), this, SLOT(test()));
+    QObject::connect(&m_ButtonFullView, SIGNAL(clicked()), this, SLOT(showFullView()));
+    QObject::connect(&m_ButtonDefaultView, SIGNAL(clicked()), this, SLOT(showDefaultView()));
 }
 
 ImageViewer::~ImageViewer()
@@ -27,6 +30,42 @@ ImageViewer::~ImageViewer()
     delete m_pImageLabel;
     if (m_pOriginImage != NULL)
         delete m_pOriginImage;
+}
+
+void ImageViewer::setDefaultView()
+{
+    m_bDefaultView = true;
+    showNormal();
+    setFixedSize(800, 600);
+    m_pImageLabel->setGeometry(10, 10, DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT);
+
+    updateButtonPosition();
+}
+
+void ImageViewer::setFullView()
+{
+    m_bDefaultView = false;
+    setWindowState(Qt::WindowFullScreen);
+    setFixedSize(DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT);
+    m_pImageLabel->setGeometry(0, 0, DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT);
+
+    updateButtonPosition();
+}
+
+void ImageViewer::updateButtonPosition()
+{
+    int x = frameSize().width() - 120;
+    m_ButtonOpenImage.setGeometry(x, 10, 120, 30);
+    m_ButtonTest.setGeometry(x, 50, 120, 30);
+    m_ButtonDefaultView.setGeometry(x, 90, 120, 30);
+    m_ButtonFullView.setGeometry(x, 90, 120, 30);
+    if (m_bDefaultView) {
+        m_ButtonDefaultView.setVisible(false);
+        m_ButtonFullView.setVisible(true);
+    } else {
+        m_ButtonDefaultView.setVisible(true);
+        m_ButtonFullView.setVisible(false);
+    }
 }
 
 static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMode acceptMode)
@@ -75,8 +114,11 @@ bool ImageViewer::loadImageFile(const QString& fileName)
         return false;
     }
 
-    QImage scaledImage = m_pOriginImage->scaled(DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT, Qt::KeepAspectRatio);
-    m_pImageLabel->setPixmap(QPixmap::fromImage(scaledImage));
+    if (m_bDefaultView) {
+        showDefaultView();
+    } else {
+        showFullView();
+    }
     setWindowFilePath(fileName);
 
     return true;
@@ -88,3 +130,20 @@ void ImageViewer::test()
                              tr("This is Test"));
 }
 
+void ImageViewer::showFullView()
+{
+    setFullView();
+    if (m_pOriginImage) {
+        QImage scaledImage = m_pOriginImage->scaled(DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT, Qt::KeepAspectRatio);
+        m_pImageLabel->setPixmap(QPixmap::fromImage(scaledImage));
+    }
+}
+
+void ImageViewer::showDefaultView()
+{
+    setDefaultView();
+    if (m_pOriginImage) {
+        QImage scaledImage = m_pOriginImage->scaled(DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT, Qt::KeepAspectRatio);
+        m_pImageLabel->setPixmap(QPixmap::fromImage(scaledImage));
+    }
+}
