@@ -21,6 +21,7 @@ public slots:
     void test();
     void showDefaultView();
     void showFullView();
+    void exit();
 
 private:
     QImage* m_pOriginImage;
@@ -29,6 +30,7 @@ private:
     QPushButton m_ButtonTest;
     QPushButton m_ButtonDefaultView;
     QPushButton m_ButtonFullView;
+    QPushButton m_ButtonExit;
     bool m_bDefaultView;
 
     bool loadImageFile(const QString& fileName);
