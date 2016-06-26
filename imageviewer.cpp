@@ -1,11 +1,7 @@
 #include "imageviewer.h"
 #include <QtWidgets>
 
-const unsigned int DISPLAY_IMAGE_WIDTH = 640;
-const unsigned int DISPLAY_IMAGE_HEIGHT = 480;
-
-const unsigned int DISPLAY_FULL_IMAGE_WIDTH = 1920;
-const unsigned int DISPLAY_FULL_IMAGE_HEIGHT = 1080;
+const unsigned int BUTTON_WIDTH = 120;
 
 ImageViewer::ImageViewer(QWidget *parent)
     : QWidget(parent),
@@ -14,15 +10,17 @@ ImageViewer::ImageViewer(QWidget *parent)
       m_ButtonOpenImage("OpenImage", this),
       m_ButtonTest("Test", this),
       m_ButtonDefaultView("DefaultView", this),
-      m_ButtonFullView("FullView", this)
+      m_ButtonFullView("FullView", this),
+      m_ButtonExit("Exit", this)
 {
-    setDefaultView();
+    showDefaultView();
     m_pImageLabel->setBackgroundRole(QPalette::Base);
 
     QObject::connect(&m_ButtonOpenImage, SIGNAL(clicked()), this, SLOT(openImage()));
     QObject::connect(&m_ButtonTest, SIGNAL(clicked()), this, SLOT(test()));
     QObject::connect(&m_ButtonFullView, SIGNAL(clicked()), this, SLOT(showFullView()));
     QObject::connect(&m_ButtonDefaultView, SIGNAL(clicked()), this, SLOT(showDefaultView()));
+    QObject::connect(&m_ButtonExit, SIGNAL(clicked()), this, SLOT(exit()));
 }
 
 ImageViewer::~ImageViewer()
@@ -32,40 +30,17 @@ ImageViewer::~ImageViewer()
         delete m_pOriginImage;
 }
 
-void ImageViewer::setDefaultView()
-{
-    m_bDefaultView = true;
-    showNormal();
-    setFixedSize(800, 600);
-    m_pImageLabel->setGeometry(10, 10, DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT);
-
-    updateButtonPosition();
-}
-
-void ImageViewer::setFullView()
-{
-    m_bDefaultView = false;
-    setWindowState(Qt::WindowFullScreen);
-    setFixedSize(DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT);
-    m_pImageLabel->setGeometry(0, 0, DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT);
-
-    updateButtonPosition();
-}
-
 void ImageViewer::updateButtonPosition()
 {
-    int x = frameSize().width() - 120;
-    m_ButtonOpenImage.setGeometry(x, 10, 120, 30);
-    m_ButtonTest.setGeometry(x, 50, 120, 30);
-    m_ButtonDefaultView.setGeometry(x, 90, 120, 30);
-    m_ButtonFullView.setGeometry(x, 90, 120, 30);
-    if (m_bDefaultView) {
-        m_ButtonDefaultView.setVisible(false);
-        m_ButtonFullView.setVisible(true);
-    } else {
-        m_ButtonDefaultView.setVisible(true);
-        m_ButtonFullView.setVisible(false);
-    }
+    int x = frameSize().width() - BUTTON_WIDTH;
+    m_ButtonOpenImage.setGeometry(x, 10, BUTTON_WIDTH, 30);
+    m_ButtonTest.setGeometry(x, 50, BUTTON_WIDTH, 30);
+    m_ButtonDefaultView.setGeometry(x, 90, BUTTON_WIDTH, 30);
+    m_ButtonFullView.setGeometry(x, 90, BUTTON_WIDTH, 30);
+    m_ButtonExit.setGeometry(x, 130, BUTTON_WIDTH, 30);
+
+    m_ButtonDefaultView.setVisible(!m_bDefaultView);
+    m_ButtonFullView.setVisible(m_bDefaultView);
 }
 
 static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMode acceptMode)
@@ -130,20 +105,43 @@ void ImageViewer::test()
                              tr("This is Test"));
 }
 
+void ImageViewer::exit()
+{
+    QApplication::quit();
+}
+
 void ImageViewer::showFullView()
 {
-    setFullView();
+    m_bDefaultView = false;
+    setWindowState(Qt::WindowFullScreen);
+
+    QRect rect = QApplication::desktop()->screenGeometry();
+    unsigned int w = rect.width();
+    unsigned int h = rect.height();
+    setFixedSize(w, h);
+    m_pImageLabel->setGeometry(0, 0, w, h);
+    updateButtonPosition();
+
     if (m_pOriginImage) {
-        QImage scaledImage = m_pOriginImage->scaled(DISPLAY_FULL_IMAGE_WIDTH, DISPLAY_FULL_IMAGE_HEIGHT, Qt::KeepAspectRatio);
+        QImage scaledImage = m_pOriginImage->scaled(w, h, Qt::KeepAspectRatio);
         m_pImageLabel->setPixmap(QPixmap::fromImage(scaledImage));
     }
 }
 
 void ImageViewer::showDefaultView()
 {
-    setDefaultView();
+    m_bDefaultView = true;
+    showNormal();
+
+    QRect rect = QApplication::desktop()->screenGeometry();
+    unsigned int w = rect.width() / 2;
+    unsigned int h = rect.height() / 2;
+    setFixedSize(w, h);
+    m_pImageLabel->setGeometry(0, 0, w - BUTTON_WIDTH, h);
+    updateButtonPosition();
+
     if (m_pOriginImage) {
-        QImage scaledImage = m_pOriginImage->scaled(DISPLAY_IMAGE_WIDTH, DISPLAY_IMAGE_HEIGHT, Qt::KeepAspectRatio);
+        QImage scaledImage = m_pOriginImage->scaled(w - BUTTON_WIDTH, h, Qt::KeepAspectRatio);
         m_pImageLabel->setPixmap(QPixmap::fromImage(scaledImage));
     }
 }
